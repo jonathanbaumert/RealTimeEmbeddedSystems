@@ -2,6 +2,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/types.h>
 #include <sched.h>
 
 #define COUNT  1000
@@ -21,8 +22,30 @@ threadParams_t threadParams[NUM_THREADS];
 pthread_attr_t fifo_sched_attr;
 struct sched_param fifo_param;
 
-// Unsafe global
-int gsum=0;
+#define SCHED_POLICY SCHEDU_FIFO
+
+void set_scheduler(void)
+{
+    int max_prio, scope, rc, cpuidx;
+    cpu_set_t cpuset;
+
+    pthread_attr_init(&fifo_sched_attr);
+    pthread_attr_setinheritsched(&fifo_sched_attr, PTHREAD_EXPLICIT_SCHED);
+    pthread_attr_setschedpolicy(&fifo_sched_attr, SCHED_POLICY);
+
+    CPU_ZERO(&cpuset);
+    cpuidx=(3);
+    CPU_SET(cpuidx, &cpuset);
+
+    pthread_attr_setaffinity_np(&fifo_sched_attr, sizeof(cpu_set_t), &cpuset);
+
+    max_prio = sched_get_priority_max(SCHED_POLICY);
+    fifo_param.sched_priority = max_prio;
+
+    sched_setscheduler(getpid(), SCHED_POLICY, &fifo_param);
+
+    pthread_attr_setschedparam(&fifo_sched_attr, &fifo_param);
+}
 
 void *sumUpThread(void *threadp)
 {
@@ -30,52 +53,8 @@ void *sumUpThread(void *threadp)
     int i; // index variable
 }
 
-void *incThread(void *threadp)
-{
-    int i;
-    threadParams_t *threadParams = (threadParams_t *)threadp;
-
-    for(i=0; i<COUNT; i++)
-    {
-        gsum=gsum+i;
-        printf("Increment thread idx=%d, gsum=%d\n", threadParams->threadIdx, gsum);
-    }
-}
-
-
-void *decThread(void *threadp)
-{
-    int i;
-    threadParams_t *threadParams = (threadParams_t *)threadp;
-
-    for(i=0; i<COUNT; i++)
-    {
-        gsum=gsum-i;
-        printf("Decrement thread idx=%d, gsum=%d\n", threadParams->threadIdx, gsum);
-    }
-}
-
-
-
 
 int main (int argc, char *argv[])
 {
-   int rc;
-   int i=0;
-
-   threadParams[i].threadIdx=i;
-   pthread_create(&threads[i],   // pointer to thread descriptor
-                  (void *)0,     // use default attributes
-                  incThread, // thread function entry point
-                  (void *)&(threadParams[i]) // parameters to pass in
-                 );
-   i++;
-
-   threadParams[i].threadIdx=i;
-   pthread_create(&threads[i], (void *)0, decThread, (void *)&(threadParams[i]));
-
-   for(i=0; i<2; i++)
-     pthread_join(threads[i], NULL);
-
-   printf("TEST COMPLETE\n");
+   
 }
