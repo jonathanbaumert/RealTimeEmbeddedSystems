@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sched.h>
+#include <syslog.h>
 
 #define COUNT  1000
 #define NUM_THREADS 128
@@ -22,7 +23,7 @@ threadParams_t threadParams[NUM_THREADS];
 pthread_attr_t fifo_sched_attr;
 struct sched_param fifo_param;
 
-#define SCHED_POLICY SCHEDU_FIFO
+#define SCHED_POLICY SCHED_FIFO
 
 void set_scheduler(void)
 {
@@ -51,6 +52,16 @@ void *sumUpThread(void *threadp)
 {
     int sum = 0; // initial sum
     int i; // index variable
+
+    threadParams_t *threadParams = (threadParams_t *) threadp;
+
+    for(i=1; i<(threadParams->threadIdx); i++)
+    {
+        sum = sum + i;
+    }    
+    
+    syslog(LOG_INFO, "[COURSE 1][ASSIGNMENT 3]: Thread idx=%d ,sum[1...%d]= Running on core : %d",
+        threadParams->threadIdx, threadParams->threadIdx, sum, sched_getcpu());
 }
 
 
