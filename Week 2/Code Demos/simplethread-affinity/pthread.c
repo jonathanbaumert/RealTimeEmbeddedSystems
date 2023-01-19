@@ -8,7 +8,7 @@
 #include <sched.h>
 
 #define NUM_THREADS 64
-#define NUM_CPUS 8
+#define NUM_CPUS 4
 
 typedef struct
 {
