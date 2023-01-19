@@ -19,6 +19,8 @@ typedef struct
 // POSIX thread declarations and scheduling attributes
 //
 pthread_t threads[NUM_THREADS];
+pthread_t mainthread;
+pthread_t startthread;
 threadParams_t threadParams[NUM_THREADS];
 pthread_attr_t fifo_sched_attr;
 struct sched_param fifo_param;
@@ -64,6 +66,23 @@ void *sumUpThread(void *threadp)
         threadParams->threadIdx, threadParams->threadIdx, sum, sched_getcpu());
 }
 
+void * starterThread(void *threadp){
+    int i, rc;
+
+    for(i=0; i < NUM_THREADS; i++)
+    {
+        threadParams[i].threadIdx = i + 1;
+
+        pthread_create(&threads[i],
+                        &fifo_sched_attr,
+                        sumUpThread,
+                        (void *) &(threadParams[i]));
+    }
+
+    for( i = 0; i < NUM_THREADS; i++){
+        pthread_join(threads[i], NULL);
+    }
+}
 
 int main (int argc, char *argv[])
 {
