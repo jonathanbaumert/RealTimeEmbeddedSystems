@@ -57,12 +57,12 @@ void *sumUpThread(void *threadp)
 
     threadParams_t *threadParams = (threadParams_t *) threadp;
 
-    for(i=1; i<(threadParams->threadIdx); i++)
+    for(i=1; i<=(threadParams->threadIdx); i++)
     {
         sum = sum + i;
     }    
     
-    syslog(LOG_INFO, "[COURSE 1][ASSIGNMENT 3]: Thread idx=%d ,sum[1...%d]= Running on core : %d",
+    syslog(LOG_INFO, "[COURSE 1][ASSIGNMENT 3]: Thread idx=%d ,sum[1...%d]=%d Running on core : %d",
         threadParams->threadIdx, threadParams->threadIdx, sum, sched_getcpu());
 }
 
@@ -86,5 +86,19 @@ void * starterThread(void *threadp){
 
 int main (int argc, char *argv[])
 {
-   
+    char * command = "uname -a";     // record the command to generate information "uname -a"
+    FILE * fp;                       // create a file pointer to be used to record the output of the command
+    char path[1000];                 // char pointer to record the output in pf
+    fp = popen(command, "r");        // use popen with the command in read mode "-r"
+    while (fgets(path, 1000, fp)!=NULL)
+            syslog(LOG_INFO,"[COURSE:1][ASSIGNMENT:1]: %s",path); // print the output of "uname -a" to the syslog
+    pclose(fp);   
+    set_scheduler();
+
+    pthread_create(&startthread,
+                    &fifo_sched_attr,
+                    starterThread,
+                    (void *)0);
+        
+    pthread_join(startthread, NULL);
 }
