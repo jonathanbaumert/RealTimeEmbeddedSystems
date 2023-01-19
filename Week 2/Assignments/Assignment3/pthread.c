@@ -1,9 +1,12 @@
+#define _GNU_SOURCE
 #include <pthread.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <sched.h>
 
 #define COUNT  1000
+#define NUM_THREADS 128
+#define NUM_CPUS 8
 
 typedef struct
 {
@@ -13,12 +16,19 @@ typedef struct
 
 // POSIX thread declarations and scheduling attributes
 //
-pthread_t threads[2];
-threadParams_t threadParams[2];
-
+pthread_t threads[NUM_THREADS];
+threadParams_t threadParams[NUM_THREADS];
+pthread_attr_t fifo_sched_attr;
+struct sched_param fifo_param;
 
 // Unsafe global
 int gsum=0;
+
+void *sumUpThread(void *threadp)
+{
+    int sum = 0; // initial sum
+    int i; // index variable
+}
 
 void *incThread(void *threadp)
 {
