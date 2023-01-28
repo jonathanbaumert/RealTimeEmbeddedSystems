@@ -62,7 +62,7 @@ void *sumUpThread(void *threadp)
         sum = sum + i;
     }    
     
-    syslog(LOG_INFO, "[COURSE 1][ASSIGNMENT 3]: Thread idx=%d ,sum[1...%d]=%d Running on core : %d",
+    syslog(LOG_INFO, "[COURSE:1][ASSIGNMENT:3]: Thread idx=%d,sum[1...%d]=%d Running on core : %d",
         threadParams->threadIdx, threadParams->threadIdx, sum, sched_getcpu());
 }
 
@@ -91,7 +91,7 @@ int main (int argc, char *argv[])
     char path[1000];                 // char pointer to record the output in pf
     fp = popen(command, "r");        // use popen with the command in read mode "-r"
     while (fgets(path, 1000, fp)!=NULL)
-            syslog(LOG_INFO,"[COURSE:1][ASSIGNMENT:1]: %s",path); // print the output of "uname -a" to the syslog
+            syslog(LOG_INFO,"[COURSE:1][ASSIGNMENT:3]: %s",path); // print the output of "uname -a" to the syslog
     pclose(fp);   
     set_scheduler();
 
