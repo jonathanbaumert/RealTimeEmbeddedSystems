@@ -12,15 +12,15 @@
 #include <time.h>
 #include <errno.h>
 
-#define NSEC_PER_SEC (1000000000)
-#define NSEC_PER_MSEC (1000000)
-#define NSEC_PER_USEC (1000)
-#define ERROR (-1)
-#define OK (0)
+#define NSEC_PER_SEC (1000000000)                               //number of nanoseconds per second
+#define NSEC_PER_MSEC (1000000)                                 //number of nanoseconds per millisecond
+#define NSEC_PER_USEC (1000)                                    //number of nanoseconds per microsecond
+#define ERROR (-1)                                              // define error code numbering
+#define OK (0)                                                  // define success code numbering
 #define TEST_SECONDS (0)
-#define TEST_NANOSECONDS (NSEC_PER_MSEC * 10)
+#define TEST_NANOSECONDS (NSEC_PER_MSEC * 10)                   // set each test to ten nanoseconds
 
-void end_delay_test(void);
+void end_delay_test(void);        
 
 static struct timespec sleep_time = {0, 0};
 static struct timespec sleep_requested = {0, 0};
@@ -59,8 +59,10 @@ void print_scheduler(void)
 
 double d_ftime(struct timespec *fstart, struct timespec *fstop)
 {
-  double dfstart = ((double)(fstart->tv_sec) + ((double)(fstart->tv_nsec) / 1000000000.0));
-  double dfstop = ((double)(fstop->tv_sec) + ((double)(fstop->tv_nsec) / 1000000000.0));
+  double dfstart = ((double)(fstart->tv_sec) 
+                 + ((double)(fstart->tv_nsec) / 1000000000.0));
+  double dfstop = ((double)(fstop->tv_sec) 
+                + ((double)(fstop->tv_nsec) / 1000000000.0));
 
   return(dfstop - dfstart); 
 }
