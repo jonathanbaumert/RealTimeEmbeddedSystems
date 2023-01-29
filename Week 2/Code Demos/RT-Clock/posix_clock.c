@@ -22,16 +22,16 @@
 
 void end_delay_test(void);        
 
-static struct timespec sleep_time = {0, 0};
-static struct timespec sleep_requested = {0, 0};
-static struct timespec remaining_time = {0, 0};
+static struct timespec sleep_time = {0, 0};                     // struct to store seconds and nanoseconds of the current sleep duration
+static struct timespec sleep_requested = {0, 0};                // struct to store seconds and nanoseconds of the requested sleep duration
+static struct timespec remaining_time = {0, 0};                 // struct to store the difference between current and requested sleep durations
 
-static unsigned int sleep_count = 0;
+static unsigned int sleep_count = 0;                            // number of sleep iterations
 
-pthread_t main_thread;
-pthread_attr_t main_sched_attr;
-int rt_max_prio, rt_min_prio, min;
-struct sched_param main_param;
+pthread_t main_thread;                                          // global main thread
+pthread_attr_t main_sched_attr;                                 // global value to be used to set the attributes of the main thread
+int rt_max_prio, rt_min_prio, min;                              // priority variables
+struct sched_param main_param;                                  // global value for scheduling parameters to be set
 
 
 void print_scheduler(void)
@@ -76,7 +76,7 @@ double d_ftime(struct timespec *fstart, struct timespec *fstop)
 
 int delta_t(struct timespec *stop, struct timespec *start, struct timespec *delta_t)
 {
-  // compute the difference in time inputs to evaluate potential scenarios
+  // delta_t compute the difference in time inputs to evaluate potential scenarios
   // Inputs:
   //  - fstart - struct timespec * that recorded the time at the start of the period
   //  - fstop  - struct timespec * that recorded the time at the end of the period
@@ -133,28 +133,34 @@ int delta_t(struct timespec *stop, struct timespec *start, struct timespec *delt
   return(OK);
 }
 
-static struct timespec rtclk_dt = {0, 0};
-static struct timespec rtclk_start_time = {0, 0};
-static struct timespec rtclk_stop_time = {0, 0};
-static struct timespec delay_error = {0, 0};
+static struct timespec rtclk_dt = {0, 0};                       // real time clock delta 
+static struct timespec rtclk_start_time = {0, 0};               // real time clock value at the start of process
+static struct timespec rtclk_stop_time = {0, 0};                // real time clock value at the end of process
+static struct timespec delay_error = {0, 0};                    // error in time due to delays
 
 //#define MY_CLOCK CLOCK_REALTIME
 //#define MY_CLOCK CLOCK_MONOTONIC
-#define MY_CLOCK CLOCK_MONOTONIC_RAW
+#define MY_CLOCK CLOCK_MONOTONIC_RAW                            // set the clock to use the monotonic raw clock
 //#define MY_CLOCK CLOCK_REALTIME_COARSE
 //#define MY_CLOCK CLOCK_MONOTONIC_COARSE
 
-#define TEST_ITERATIONS (100)
+#define TEST_ITERATIONS (100)                                   // define the number of iterations to test
 
 void *delay_test(void *threadID)
 {
-  int idx, rc;
-  unsigned int max_sleep_calls=3;
-  int flags = 0;
-  struct timespec rtclk_resolution;
+  // *delay_test 
+  // Inputs:
+  //  - threadID - void * that contains...c
+  
+  int idx, rc;                        //id and return code variables
+  unsigned int max_sleep_calls=3;     //maximum number of sleep iterations
+  int flags = 0;                      //variable to store flags
+  struct timespec rtclk_resolution;   //struct to store the real time clock resolution
 
-  sleep_count = 0;
+  sleep_count = 0;                    //initialize sleep counter to 0
 
+  // get the resolution of the clock that has been specified
+  // display an error if getting the resolution fails otherwise print the returned resulution
   if(clock_getres(MY_CLOCK, &rtclk_resolution) == ERROR)
   {
       perror("clock_getres");
@@ -165,9 +171,10 @@ void *delay_test(void *threadID)
       printf("\n\nPOSIX Clock demo using system RT clock with resolution:\n\t%ld secs, %ld microsecs, %ld nanosecs\n", rtclk_resolution.tv_sec, (rtclk_resolution.tv_nsec/1000), rtclk_resolution.tv_nsec);
   }
 
+  // loop through clock test code TEST_ITERATIONS number of times
   for(idx=0; idx < TEST_ITERATIONS; idx++)
   {
-      printf("test %d\n", idx);
+      printf("test %d\n", idx); // print the current test iteration number
 
       /* run test for defined seconds */
       sleep_time.tv_sec=TEST_SECONDS;
