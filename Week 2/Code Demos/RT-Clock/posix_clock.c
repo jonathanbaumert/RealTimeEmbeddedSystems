@@ -36,6 +36,7 @@ struct sched_param main_param;
 
 void print_scheduler(void)
 {
+  // display the type of scheduling policy that is in use
    int schedType;
 
    schedType = sched_getscheduler(getpid());
@@ -59,8 +60,13 @@ void print_scheduler(void)
 
 double d_ftime(struct timespec *fstart, struct timespec *fstop)
 {
+  // compute the difference in time inputs
+  // Inputs:
+  //  - fstart - struct timespec * that recorded the time at the start of the period
+  //  - fstop  - struct timespec * that recorded the time at the end of the period
+  // Output: the difference between fstart and fstop
   double dfstart = ((double)(fstart->tv_sec) 
-                 + ((double)(fstart->tv_nsec) / 1000000000.0));
+                 + ((double)(fstart->tv_nsec) / 1000000000.0)); 
   double dfstop = ((double)(fstop->tv_sec) 
                 + ((double)(fstop->tv_nsec) / 1000000000.0));
 
@@ -70,31 +76,32 @@ double d_ftime(struct timespec *fstart, struct timespec *fstop)
 
 int delta_t(struct timespec *stop, struct timespec *start, struct timespec *delta_t)
 {
+  // compute the difference in time inputs to evaluate potential scenarios
+  // Inputs:
+  //  - fstart - struct timespec * that recorded the time at the start of the period
+  //  - fstop  - struct timespec * that recorded the time at the end of the period
+  // Output: the code indicating scenario (OK or ERROR)
+
+  // record the difference between start and stop for seconds and nanoseconds
   int dt_sec=stop->tv_sec - start->tv_sec;
   int dt_nsec=stop->tv_nsec - start->tv_nsec;
 
-  //printf("\ndt calcuation\n");
-
   // case 1 - less than a second of change
   if(dt_sec == 0)
-  {
-	  //printf("dt less than 1 second\n");
-
-	  if(dt_nsec >= 0 && dt_nsec < NSEC_PER_SEC)
+  {	  
+	  if(dt_nsec >= 0 && dt_nsec < NSEC_PER_SEC) //nanosec greater at stop than start
 	  {
-	          //printf("nanosec greater at stop than start\n");
+	          
 		  delta_t->tv_sec = 0;
 		  delta_t->tv_nsec = dt_nsec;
 	  }
-
-	  else if(dt_nsec > NSEC_PER_SEC)
+	  else if(dt_nsec > NSEC_PER_SEC) //nanosec overflow
 	  {
-	          //printf("nanosec overflow\n");
+	          
 		  delta_t->tv_sec = 1;
 		  delta_t->tv_nsec = dt_nsec-NSEC_PER_SEC;
 	  }
-
-	  else // dt_nsec < 0 means stop is earlier than start
+	  else // ERROR condition: dt_nsec < 0 means stop is earlier than start
 	  {
 	         printf("stop is earlier than start\n");
 		 return(ERROR);  
@@ -103,27 +110,22 @@ int delta_t(struct timespec *stop, struct timespec *start, struct timespec *delt
 
   // case 2 - more than a second of change, check for roll-over
   else if(dt_sec > 0)
-  {
-	  //printf("dt more than 1 second\n");
-
-	  if(dt_nsec >= 0 && dt_nsec < NSEC_PER_SEC)
-	  {
-	          //printf("nanosec greater at stop than start\n");
+  {	  
+	  if(dt_nsec >= 0 && dt_nsec < NSEC_PER_SEC) //nanosec greater at stop than start
+	  {	          
 		  delta_t->tv_sec = dt_sec;
 		  delta_t->tv_nsec = dt_nsec;
 	  }
 
-	  else if(dt_nsec > NSEC_PER_SEC)
-	  {
-	          //printf("nanosec overflow\n");
+	  else if(dt_nsec > NSEC_PER_SEC) //nanosec overflow
+	  {	          
 		  delta_t->tv_sec = delta_t->tv_sec + 1;
 		  delta_t->tv_nsec = dt_nsec-NSEC_PER_SEC;
 	  }
 
 	  else // dt_nsec < 0 means roll over
 	  {
-	          //printf("nanosec roll over\n");
-		  delta_t->tv_sec = dt_sec-1;
+	    delta_t->tv_sec = dt_sec-1;
 		  delta_t->tv_nsec = NSEC_PER_SEC + dt_nsec;
 	  }
   }
