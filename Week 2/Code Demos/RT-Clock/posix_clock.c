@@ -1,8 +1,8 @@
 /****************************************************************************/
 /* Function: nanosleep and POSIX 1003.1b RT clock demonstration             */
 /*                                                                          */
-/* Sam Siewert - 02/05/2011                                                 */
-/*                                                                          */
+/* Sam Siewert      - 02/05/2011                                            */
+/* Jonathan Baumert - 01/29/2023                                            */
 /****************************************************************************/
 
 #include <pthread.h>
@@ -168,7 +168,8 @@ void *delay_test(void *threadID)
   }
   else
   {
-      printf("\n\nPOSIX Clock demo using system RT clock with resolution:\n\t%ld secs, %ld microsecs, %ld nanosecs\n", rtclk_resolution.tv_sec, (rtclk_resolution.tv_nsec/1000), rtclk_resolution.tv_nsec);
+      printf("\n\nPOSIX Clock demo using system RT clock with resolution:\n\t%ld secs, %ld microsecs, %ld nanosecs\n",
+              rtclk_resolution.tv_sec, (rtclk_resolution.tv_nsec/1000), rtclk_resolution.tv_nsec);
   }
 
   // loop through clock test code TEST_ITERATIONS number of times
@@ -197,11 +198,12 @@ void *delay_test(void *threadID)
       while (((remaining_time.tv_sec > 0) || (remaining_time.tv_nsec > 0))
 		      && (sleep_count < max_sleep_calls));
 
-      clock_gettime(MY_CLOCK, &rtclk_stop_time);
+      clock_gettime(MY_CLOCK, &rtclk_stop_time); // stop time stamp
 
       delta_t(&rtclk_stop_time, &rtclk_start_time, &rtclk_dt);
       delta_t(&rtclk_dt, &sleep_requested, &delay_error);
 
+      // perform end of test actions
       end_delay_test();
   }
 
@@ -209,26 +211,16 @@ void *delay_test(void *threadID)
 
 void end_delay_test(void)
 {
-    double real_dt;
-#if 0
-  printf("MY_CLOCK start seconds = %ld, nanoseconds = %ld\n", 
-         rtclk_start_time.tv_sec, rtclk_start_time.tv_nsec);
-  
-  printf("MY_CLOCK clock stop seconds = %ld, nanoseconds = %ld\n", 
-         rtclk_stop_time.tv_sec, rtclk_stop_time.tv_nsec);
-#endif
+  // end_delay_test displays the relevant information at the end of a timed test iteration
+
+  double real_dt;
 
   real_dt=d_ftime(&rtclk_start_time, &rtclk_stop_time);
+  // print the time difference
   printf("MY_CLOCK clock DT seconds = %ld, msec=%ld, usec=%ld, nsec=%ld, sec=%6.9lf\n", 
          rtclk_dt.tv_sec, rtclk_dt.tv_nsec/1000000, rtclk_dt.tv_nsec/1000, rtclk_dt.tv_nsec, real_dt);
 
-#if 0
-  printf("Requested sleep seconds = %ld, nanoseconds = %ld\n", 
-         sleep_requested.tv_sec, sleep_requested.tv_nsec);
-
-  printf("\n");
-  printf("Sleep loop count = %ld\n", sleep_count);
-#endif
+  // print the delay error
   printf("MY_CLOCK delay error = %ld, nanoseconds = %ld\n", 
          delay_error.tv_sec, delay_error.tv_nsec);
 }
@@ -240,44 +232,44 @@ void main(void)
    int rc, scope;
 
    printf("Before adjustments to scheduling policy:\n");
-   print_scheduler();
+   print_scheduler();                                                             // print the initial scheduling policy
 
 #ifdef RUN_RT_THREAD
-   pthread_attr_init(&main_sched_attr);
-   pthread_attr_setinheritsched(&main_sched_attr, PTHREAD_EXPLICIT_SCHED);
-   pthread_attr_setschedpolicy(&main_sched_attr, SCHED_FIFO);
+   pthread_attr_init(&main_sched_attr);                                           // initialize the attributes of the scheduling policy
+   pthread_attr_setinheritsched(&main_sched_attr, PTHREAD_EXPLICIT_SCHED);        // set the scheduling inheritence mode attribute to Explicit
+   pthread_attr_setschedpolicy(&main_sched_attr, SCHED_FIFO);                     // set the schedululing policy attribute to FIFO
 
-   rt_max_prio = sched_get_priority_max(SCHED_FIFO);
-   rt_min_prio = sched_get_priority_min(SCHED_FIFO);
+   rt_max_prio = sched_get_priority_max(SCHED_FIFO);                              // record the max priority for SCHED_FIFO
+   rt_min_prio = sched_get_priority_min(SCHED_FIFO);                              // record the min priority for SCHED_FIFO                              
 
    main_param.sched_priority = rt_max_prio;
    rc=sched_setscheduler(getpid(), SCHED_FIFO, &main_param);
 
 
-   if (rc)
+   if (rc)                                                                        // if there is an error setting the sheduler display the error and exit
    {
        printf("ERROR; sched_setscheduler rc is %d\n", rc);
        perror("sched_setschduler"); exit(-1);
    }
 
-   printf("After adjustments to scheduling policy:\n");
+   printf("After adjustments to scheduling policy:\n");                           // print the updated scheduling policy
    print_scheduler();
 
-   main_param.sched_priority = rt_max_prio;
-   pthread_attr_setschedparam(&main_sched_attr, &main_param);
+   main_param.sched_priority = rt_max_prio;                                       // set the max priority of the main param to the maximum FIFO prioirty value
+   pthread_attr_setschedparam(&main_sched_attr, &main_param);                     // set the scheduling attribute and parameters for the main pthread
 
-   rc = pthread_create(&main_thread, &main_sched_attr, delay_test, (void *)0);
+   rc = pthread_create(&main_thread, &main_sched_attr, delay_test, (void *)0);    // initiate the first thread
 
-   if (rc)
+   if (rc)                                                                        // check if there was an error in the thread, if so display the error and exit
    {
        printf("ERROR; pthread_create() rc is %d\n", rc);
        perror("pthread_create");
        exit(-1);
    }
 
-   pthread_join(main_thread, NULL);
+   pthread_join(main_thread, NULL);                                               // join the main thread
 
-   if(pthread_attr_destroy(&main_sched_attr) != 0)
+   if(pthread_attr_destroy(&main_sched_attr) != 0)                                // destroy the thread attributes
      perror("attr destroy");
 #else
    delay_test((void *)0);

@@ -33,6 +33,7 @@ struct sched_param fifo_param;
 
 void print_scheduler(void)
 {
+    // dprint_scheduler: display the type of scheduling policy that is in use
     int schedType = sched_getscheduler(getpid());
 
     switch(schedType)
@@ -54,28 +55,29 @@ void print_scheduler(void)
 
 void set_scheduler(void)
 {
+    //set_scheduler: set the desired scheduler attributes and scheduling policy setting
     int max_prio, scope, rc, cpuidx;
     cpu_set_t cpuset;
 
-    printf("INITIAL "); print_scheduler();
+    printf("INITIAL "); print_scheduler();                                          // print the initial scheduling information
 
-    pthread_attr_init(&fifo_sched_attr);
-    pthread_attr_setinheritsched(&fifo_sched_attr, PTHREAD_EXPLICIT_SCHED);
-    pthread_attr_setschedpolicy(&fifo_sched_attr, SCHED_POLICY);
-    CPU_ZERO(&cpuset);
-    cpuidx=(3);
-    CPU_SET(cpuidx, &cpuset);
-    pthread_attr_setaffinity_np(&fifo_sched_attr, sizeof(cpu_set_t), &cpuset);
+    pthread_attr_init(&fifo_sched_attr);                                            // initialize the scheduling attributes
+    pthread_attr_setinheritsched(&fifo_sched_attr, PTHREAD_EXPLICIT_SCHED);         // set the inhereted scheduler to explicit
+    pthread_attr_setschedpolicy(&fifo_sched_attr, SCHED_POLICY);                    // set the scheduling policy to FIFO
+    CPU_ZERO(&cpuset);                                                              // zero out the cpu set
+    cpuidx=(3);                                                                     // set the id of the cpu to use (CPU 4)
+    CPU_SET(cpuidx, &cpuset);                                                       // set the cpu to cpu id of the 4th CPU
+    pthread_attr_setaffinity_np(&fifo_sched_attr, sizeof(cpu_set_t), &cpuset);      // set the attribute that will limit the thread to running on the specified thread
 
-    max_prio=sched_get_priority_max(SCHED_POLICY);
-    fifo_param.sched_priority=max_prio;    
+    max_prio=sched_get_priority_max(SCHED_POLICY);                                  // get the maximum priority for the requested SCHED_POLICY
+    fifo_param.sched_priority=max_prio;                                             // set the priority of the fifo param to the maximum priority of the SCHED_POLICY
 
-    if((rc=sched_setscheduler(getpid(), SCHED_POLICY, &fifo_param)) < 0)
-        perror("sched_setscheduler");
+    if((rc=sched_setscheduler(getpid(), SCHED_POLICY, &fifo_param)) < 0)            // set the scheduler with the given policy, and parameters
+        perror("sched_setscheduler");                                               
 
-    pthread_attr_setschedparam(&fifo_sched_attr, &fifo_param);
+    pthread_attr_setschedparam(&fifo_sched_attr, &fifo_param);                      // set the thread attributes to the set FIFO sheduling attributes
 
-    printf("ADJUSTED "); print_scheduler();
+    printf("ADJUSTED "); print_scheduler();                                         // print the final scheduler information
 }
 
 
@@ -83,6 +85,10 @@ void set_scheduler(void)
 
 void *counterThread(void *threadp)
 {
+    // counterThread: sum up to the id of the given thread, and do so MAX_ITERATION times
+    // Inputs:
+    //  - threadp: void * to a struct containing threadp information
+    
     int sum=0, i, rc, iterations;
     threadParams_t *threadParams = (threadParams_t *)threadp;
     pthread_t mythread;
@@ -113,24 +119,27 @@ void *counterThread(void *threadp)
 
 void *starterThread(void *threadp)
 {
-   int i, rc;
+    // starterThread: function to as an entry point to initialize the requested number of threads
+    // Input:
+    //  - threadp: void * to a struct containing threadp information
+    int i, rc;
 
-   printf("starter thread running on CPU=%d\n", sched_getcpu());
+    printf("starter thread running on CPU=%d\n", sched_getcpu());
 
-   for(i=0; i < NUM_THREADS; i++)
-   {
-       threadParams[i].threadIdx=i;
+    for(i=0; i < NUM_THREADS; i++)
+    {
+        threadParams[i].threadIdx=i;
 
-       pthread_create(&threads[i],   // pointer to thread descriptor
-                      &fifo_sched_attr,     // use FIFO RT max priority attributes
-                      counterThread, // thread function entry point
-                      (void *)&(threadParams[i]) // parameters to pass in
-                     );
+        pthread_create(&threads[i],   // pointer to thread descriptor
+                        &fifo_sched_attr,     // use FIFO RT max priority attributes
+                        counterThread, // thread function entry point
+                        (void *)&(threadParams[i]) // parameters to pass in
+                        );
 
-   }
+    }
 
-   for(i=0;i<NUM_THREADS;i++)
-       pthread_join(threads[i], NULL);
+    for(i=0;i<NUM_THREADS;i++)
+        pthread_join(threads[i], NULL);
 
 }
 
